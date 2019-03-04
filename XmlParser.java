@@ -12,13 +12,24 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
+import java.net.URL;
+import java.io.InputStream;
+import java.net.MalformedURLException;
 public class XmlParser
 {
 	private File source;
 	private HashMap<String,ArrayList<String>> parsedInfo;	
-	public XmlParser()
+	private URL url;
+	/*public XmlParser()
 	{
 		this(null);	
+	}*/
+	public XmlParser(URL source)
+	{
+		this.url=source;
+		try{
+		parsedInfo=parseXML(this.url);
+		}catch(Exception ex){ex.printStackTrace();}
 	}
 	public XmlParser(File source)
 	{
@@ -52,6 +63,15 @@ public class XmlParser
 		fillMapValues(map,source);	
 		return map;
 	}
+	//overloaded method
+	private HashMap<String,ArrayList<String>> parseXML(URL source)
+	{
+		HashMap<String,ArrayList<String>> map=new HashMap<>();		
+		initHashMap(map,source);
+	//	System.out.println("ey");
+		fillMapValues(map,source);	
+		return map;
+	}
 	private void fillMapValues(HashMap<String,ArrayList<String>> map,File source)
 	{
 		try(Scanner input=new Scanner(source))
@@ -63,7 +83,22 @@ public class XmlParser
 				continue;
 				analyzeLine(map,line);
 			}
-		}catch(IOException ex){System.out.println("incorrect file!"); return;}
+		}catch(IOException ex){System.out.println("incorrect file!"); ex.printStackTrace();return;}
+	}
+	//overloaded method
+	private void fillMapValues(HashMap<String,ArrayList<String>> map,URL source)
+	{
+		try(Scanner input=new Scanner(source.openStream()))
+		{
+			String line=null;
+			while(input.hasNextLine())
+			{
+				
+				if((line=input.nextLine()).startsWith("<?xml") || line.startsWith("<feed") || !input.hasNextLine())
+				continue;
+				analyzeLine(map,line);
+			}
+		}catch(Exception ex){System.out.println("incorrect file!"); ex.printStackTrace();return;}
 	}
 	private void analyzeLine(HashMap<String,ArrayList<String>> map,String line)
 	{
@@ -96,7 +131,28 @@ public class XmlParser
 				}
 			}
 
-		}catch(IOException ex){System.out.println("incorrect file!");	}
+		}catch(Exception ex){System.out.println("incorrect file!");	}
+	}
+	//overloaded method
+	private void initHashMap(HashMap<String,ArrayList<String>> map,URL source)
+	{
+		String line;
+		try(Scanner input=new Scanner(source.openStream()))
+		{
+			while(input.hasNextLine())
+			{
+				if((line=input.nextLine()).startsWith("<?xml") || line.startsWith("<feed"))
+				continue;
+				else
+				{
+					HashSet<String> types=getEntryTypes(line);
+					for(String e:types)
+						map.put(e,new ArrayList<String>());
+					return;
+				}
+			}
+
+		}catch(Exception ex){System.out.println("incorrect file!");	}
 	}
 	private HashSet<String> getEntryTypes(String line)
 	{
